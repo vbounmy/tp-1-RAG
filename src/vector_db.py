@@ -7,15 +7,33 @@ from typing import Any, Dict, List, Optional
 from chromadb import PersistentClient
 from sentence_transformers import SentenceTransformer
 
-from .config import CHROMA_PERSIST_PATH, CORPUS_CSV_PATH, EMBEDDING_MODEL
+from config import CHROMA_PERSIST_PATH, CORPUS_CSV_PATH, EMBEDDING_MODEL
 
 
 class VectorDB:
     def __init__(self, collection_name: str, chunks: Optional[List[Dict[str, str]]] = None) -> None:
         self.client = PersistentClient(path=str(Path(CHROMA_PERSIST_PATH)))
         self.collection_name = collection_name
-        self.collection = self._get_or_create_collection(chunks or self._load_csv_chunks())
-        self.model = SentenceTransformer(self.collection.metadata["embedding_model"])
+
+        # Si la collection existe déjà, la charger et l'utiliser dans le modèle
+        existing_names = [collection.name for collection in self.client.list_collections()]
+        if collection_name in existing_names:
+            self.collection = self.client.get_collection(collection_name)
+            model_name = self.collection.metadata.get("embedding_model", EMBEDDING_MODEL)
+            self.model = SentenceTransformer(model_name)
+            # Si la collection existe mais est vide, essayer d'indexer à partir du CSV ou des chunks fournis
+            try:
+                if self.collection.count() == 0:
+                    chunks_to_index = chunks or self._load_csv_chunks()
+                    if chunks_to_index:
+                        self._index_chunks(self.collection, chunks_to_index)
+            except Exception:
+                # Non-fatal: continuer même si count/peek n'est pas supporté
+                pass
+        else:
+            # Pour une nouvelle collection, préparer le modèle (à partir de la configuration) avant l'indexation
+            self.model = SentenceTransformer(EMBEDDING_MODEL)
+            self.collection = self._get_or_create_collection(chunks or self._load_csv_chunks())
 
     def _load_csv_chunks(self) -> List[Dict[str, str]]:
         if not CORPUS_CSV_PATH.exists():
