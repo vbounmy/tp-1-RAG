@@ -2,7 +2,7 @@ import os
 from groq import Groq
 from dotenv import load_dotenv
 
-from constants import LLM_MODEL
+from config import LLM_MODEL
 from vector_db import VectorDB
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
