@@ -12,6 +12,10 @@ CHROMA_PERSIST_PATH = ROOT_DIR / "chroma_db"
 RAG_PROMPT_PATH = PROMPTS_DIR / "rag_system.txt"
 MODERATOR_PROMPT_PATH = PROMPTS_DIR / "moderator_system.txt"
 
+# Données
+DATA_DIR = ROOT_DIR / "data"
+CORPUS_CSV_PATH = DATA_DIR / "05_corpus_rag.csv"
+
 # Modèles
 EMBEDDING_MODEL = "sentence-transformers/distiluse-base-multilingual-cased-v2"
 LLM_MODEL = "llama-3.3-70b-versatile"
